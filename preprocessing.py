@@ -59,14 +59,14 @@ prior_mean_difficulty = rmp["Average Difficulty"].mean()
 strength_of_prior = rmp["Number of ratings"].median()
 
 # apply Bayesian adjustment for ‘Average Rating’
-rmp["Average Rating Adjusted"] = (
+rmp["Average Rating (Adjusted)"] = (
     (strength_of_prior * prior_mean_rating + 
      rmp["Number of ratings"] * rmp["Average Rating"]) /
     (strength_of_prior + rmp["Number of ratings"])
 )
 
 # apply Bayesian adjustment for ‘Average Difficulty’
-rmp["Average Difficulty Adjusted"] = (
+rmp["Average Difficulty (Adjusted)"] = (
     (strength_of_prior * prior_mean_difficulty + 
      rmp["Number of ratings"] * rmp["Average Difficulty"]) /
     (strength_of_prior + rmp["Number of ratings"])
@@ -75,7 +75,7 @@ rmp["Average Difficulty Adjusted"] = (
 # normalize tag columns by 'Number of ratings'
 tag_columns = rmp_tags.columns
 for tag in tag_columns:
-    rmp[f"{tag} Normalized"] = rmp[tag] / rmp["Number of ratings"]
+    rmp[f"{tag} (Normalized)"] = rmp[tag] / rmp["Number of ratings"]
 
 # calculate total number of tags
 rmp["Total Number of Tags"] = rmp[tag_columns].sum(axis=1)
@@ -87,9 +87,9 @@ rmp["Average Tags per Rating"] = rmp["Total Number of Tags"] / rmp["Number of ra
 column_order = [
     # numerical columns
     "Average Rating",
-    "Average Rating Adjusted",
+    "Average Rating (Adjusted)",
     "Average Difficulty",
-    "Average Difficulty Adjusted",
+    "Average Difficulty (Adjusted)",
     "Number of ratings",
     "Received a “pepper”?",
     "The proportion of students that said they would take the class again",
@@ -104,7 +104,7 @@ column_order = [
 
     # tag columns
     *tag_columns,  # original tag columns
-    *[f"{tag} Normalized" for tag in tag_columns],  # normalized tag columns
+    *[f"{tag} (Normalized)" for tag in tag_columns],  # normalized tag columns
     "Total Number of Tags",
     "Average Tags per Rating"
 ]
