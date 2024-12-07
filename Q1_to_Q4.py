@@ -7,9 +7,13 @@ all_data = pd.read_csv("rmpCapstoneAdjusted_69989.csv")
 
 """
 For Question 1, we firstly apply Levene's test to check whether the two datasets have equal variances, 
-and then use the proper t-test to test whether the ratings are gendered.
+and then use the proper t-test to test whether there is a pro-male effect.
+BE CAREFUL that we are testing a pro-male effect, so it should be ONE-SIDED test.
+
+H_0: There is no difference between students' ratings for male and female professors.
+H_1: Male professors get higher ratings than female professors
 """
-# The RNG is set by using my N number.
+# We are choosing Tim Zhou's N number to be the seed.
 rng = np.random.default_rng(14420733)
 
 ALPHA = 0.005
@@ -32,21 +36,22 @@ print(f"Variance in Average Difficulty (Adjusted) of male professors: {var_male:
 print(f"Variance in Average Difficulty (Adjusted) of female professors: {var_female:.4f}")
 
 # perform Levene's test to check for equal variances, and then decide the proper test.
+# BE CAREFUL that we are testing a pro-male effect, so it should be ONE-SIDED test.
 levene_test = levene(rating_male, rating_female)
 print(f"Levene's Test:\n  Statistic = {levene_test.statistic:.4f}\n  P-Value = {levene_test.pvalue:.4e}")
 if levene_test.pvalue > ALPHA:
     print("We can assume equal vairance --> We shall use independent samples t-test\n")
-    inde_t_test = ttest_ind(rating_male, rating_female, equal_var=True)
+    inde_t_test = ttest_ind(rating_male, rating_female, equal_var=True, alternative="greater")
     stats, pval = inde_t_test.statistic, inde_t_test.pvalue
     print(f"Independent Samples t-test:\n  Statistic = {stats:.4f}\n  P-Value = {pval:.4e}")
 else:
     print("We cannot assume equal vairance --> We shall use Welch t-test\n")
-    welch_t_test = ttest_ind(rating_male, rating_female, equal_var=False)
+    welch_t_test = ttest_ind(rating_male, rating_female, equal_var=False, alternative="greater")
     stats, pval = welch_t_test.statistic, welch_t_test.pvalue
     print(f"Welch t-Test:\n  Statistic = {welch_t_test.statistic:.4f}\n  P-Value = {welch_t_test.pvalue:.4e}")
 
 whether_significant = 'significant!' if pval < ALPHA else 'not significant!'
-print(f"The p-value for the t-test is {pval:.4e}, which means that the result is {whether_significant}")
+print(f"The p-value for the one-sided t-test is {pval:.4e}, which means that the result is {whether_significant}")
 
 # A plot that visualizes their distributions
 bins = np.arange(0.75, 5.25, 0.5)
@@ -57,10 +62,20 @@ plt.ylabel('Frequency')
 plt.title('Comparison between the ratings of male / female professore')
 plt.legend()
 plt.show()
+"""
+The result for Question 1 is:
+Levene's test indicates a statistically significant difference in the variance between the ratings for male and female
+Thus, we decided to use Welch's t-test. The p-value is 2.3259e-12 < 0.005.
+Hence, we reject the null hypothesis
+"""
+
 
 
 """
 For Quesion 2, we use Levene's test to check whether there is a gender difference in spread
+
+H_0: There is no difference between the variance of students' ratings for male and female professors.
+H_1: There is a difference between the variance of students' ratings for male and female professors.
 """
 # calculate and print variances
 var_male, var_female  = rating_male.var(ddof=1), rating_female.var(ddof=1)
@@ -74,6 +89,11 @@ if levene_test.pvalue > ALPHA:
     print("There is not a gender difference in the spread \n")
 else:
     print("There is a gender difference in the spread \n")
+"""
+The result for Question 2 is:
+Levene's test gives a p-value to be 3.3177e-06 < 0.005.
+Hence, we reject the null hypothesis
+"""
 
 
 
@@ -113,12 +133,19 @@ for i in range(n_exper):
 ci_cohen_d = np.percentile(boot_cohen_d, [2.5, 97.5])
 ci_var_ratio = np.percentile(boot_var_ratio, [2.5, 97.5])
 
-# Output results
-
 print(f"Bootstrapped Cohen's d: {np.mean(boot_cohen_d):.4f}")
 print(f"95% CI for Cohen's d: {ci_cohen_d}")
 print(f"Bootstrapped Variance Ratio: {np.mean(ci_var_ratio):.4f}")
 print(f"95% CI for Variance Ratio: {ci_var_ratio}")
+"""
+The result for Question 3 is:
+
+Bootstrapped Cohen's d: 0.0582
+95% CI for Cohen's d: [0.03010664 0.08580679]
+Bootstrapped Variance Ratio: 0.9565
+95% CI for Variance Ratio: [0.91368686 0.99934664]
+"""
+
 
 
 
@@ -165,4 +192,16 @@ most_sig_3, least_sig_3 = results_df["Tag"].to_list()[:3], results_df["Tag"].to_
 most_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in most_sig_3]
 least_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in least_sig_3]
 print(f"The most gendered 3 tags are {most_sig_3}, and the least gendered 3 tags are {least_sig_3}")
+"""
+The result for Question 4 is:
+
+The following 19 tags exhibit a statistically significant different in gender: 
+['Hilarious', 'Amazing lectures', 'Caring', 'Respected', 'Lecture heavy', 'Participation matters', 
+'Good feedback', 'Graded by few things', 'Lots of homework', 'Group projects', 'So many papers', 
+'Extra credit', 'Tough grader', 'Test heavy', 'Clear grading', 'Accessible', 'Inspirational', 
+'Lots to read', 'Don’t skip class or you will not pass']
+
+The most gendered 3 tags are ['Hilarious', 'Amazing lectures', 'Caring'],
+and the least gendered 3 tags are ['Lots to read', 'Don’t skip class or you will not pass', 'Pop quizzes!']
+"""
 
