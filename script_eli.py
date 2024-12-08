@@ -11,8 +11,8 @@ ALPHA = 0.005
 rmf = pd.read_csv('rmpCapstoneAdjusted_69989.csv')
 
 # extract average difficulty for male and female professors
-diff_male = rmf[rmf['Male gender'] == 1]['Average Difficulty (Adjusted)']
-diff_female = rmf[rmf['Female'] == 1]['Average Difficulty (Adjusted)']
+diff_male = rmf[(rmf['Male gender'] == 1) & (rmf["Female"] == 0)]['Average Difficulty (Adjusted)']
+diff_female = rmf[(rmf['Female'] == 1) & (rmf["Male gender"] == 0)]['Average Difficulty (Adjusted)']
 
 # calculate and print sample sizes
 n_male = len(diff_male)
@@ -52,7 +52,7 @@ df_plot = pd.DataFrame({
     'Gender': ['Male'] * n_male + ['Female'] * n_female
 })
 
-# use sns.displot to visualize the distribution of average difficulty by gender
+# visualize the distribution of average difficulty by gender
 sns.displot(data=df_plot, x='Average Difficulty (Adjusted)', hue='Gender', kind='kde', fill=True, height=6, aspect=1.5)
 plt.title('Distribution of Average Difficulty (Adjusted) by Gender')
 plt.xlabel('Average Difficulty (Adjusted)')
@@ -175,7 +175,7 @@ data_by_region = [state_avg_rating[state_avg_rating["Region"] == region]["Averag
 
 anova_result = f_oneway(*data_by_region)
 
-# print ANAVA result
+# print ANOVA result
 print(f"ANOVA Result: F-statistic = {anova_result.statistic:.4f}, p-value = {anova_result.pvalue:.4e}")
 if anova_result.pvalue < ALPHA:
     print(f"result: the average rating is significantly different across regions (p < {ALPHA}).")
