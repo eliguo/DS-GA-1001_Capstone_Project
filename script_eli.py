@@ -177,10 +177,10 @@ anova_result = f_oneway(*data_by_region)
 
 # print ANOVA result
 print(f"ANOVA Result: F-statistic = {anova_result.statistic:.4f}, p-value = {anova_result.pvalue:.4e}")
-if anova_result.pvalue < ALPHA:
-    print(f"result: the average rating is significantly different across regions (p < {ALPHA}).")
+if anova_result.pvalue <= ALPHA:
+    print(f"result: the average rating is significantly different across regions (p <= {ALPHA}).")
 else:
-    print(f"result: the average rating is not significantly different across regions (p >= {ALPHA}).")
+    print(f"result: the average rating is not significantly different across regions (p > {ALPHA}).")
 
 # visualize with boxplot
 plt.figure(figsize=(10, 6))
