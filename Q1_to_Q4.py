@@ -18,8 +18,8 @@ rng = np.random.default_rng(14420733)
 
 ALPHA = 0.005
 # extract average difficulty for male and female professors
-rating_male = all_data.query("`Male gender` == 1")["Average Rating (Adjusted)"]
-rating_female = all_data.query("`Female` == 1")["Average Rating (Adjusted)"]
+rating_male = all_data.query("`Male gender` == 1 & `Female` == 0")["Average Rating (Adjusted)"]
+rating_female = all_data.query("`Male gender` == 0 & `Female` == 1")["Average Rating (Adjusted)"]
 
 # We must reindex here. It is crucial for bootstrapping in Question 3
 rating_male = rating_male.reset_index(drop=True)
@@ -65,7 +65,7 @@ plt.show()
 """
 The result for Question 1 is:
 Levene's test indicates a statistically significant difference in the variance between the ratings for male and female
-Thus, we decided to use Welch's t-test. The p-value is 2.3259e-12 < 0.005.
+Thus, we decided to use Welch's t-test. The p-value is 2.6165e-13 < 0.005.
 Hence, we reject the null hypothesis
 """
 
@@ -91,7 +91,7 @@ else:
     print("There is a gender difference in the spread \n")
 """
 The result for Question 2 is:
-Levene's test gives a p-value to be 3.3177e-06 < 0.005.
+Levene's test gives a p-value to be 1.1839e-06 < 0.005.
 Hence, we reject the null hypothesis
 """
 
@@ -140,10 +140,10 @@ print(f"95% CI for Variance Ratio: {ci_var_ratio}")
 """
 The result for Question 3 is:
 
-Bootstrapped Cohen's d: 0.0582
-95% CI for Cohen's d: [0.03010664 0.08580679]
-Bootstrapped Variance Ratio: 0.9565
-95% CI for Variance Ratio: [0.91368686 0.99934664]
+Bootstrapped Cohen's d: 0.0633
+95% CI for Cohen's d: [0.03573299 0.09076494]
+Bootstrapped Variance Ratio: 0.9519
+95% CI for Variance Ratio: [0.91048425 0.99339719]
 """
 
 
@@ -169,8 +169,8 @@ tag_results = []
 
 for tag in normalized_tag_columns:
     # Split normalized tag values by gender
-    tag_male = all_data.query("`Male gender` == 1")[tag]
-    tag_female = all_data.query("`Female` == 1")[tag]
+    tag_male = all_data.query("`Male gender` == 1 & `Female` == 0")[tag]
+    tag_female = all_data.query("`Male gender` == 0 & `Female` == 1")[tag]
     
     # Perform Levene first, and then t-test
     levene_test = levene(tag_male, tag_female)
