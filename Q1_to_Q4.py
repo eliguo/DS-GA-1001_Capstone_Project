@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import t, ttest_ind, levene
+from scipy.stats import t, ttest_ind, levene, mannwhitneyu
 
 all_data = pd.read_csv("rmpCapstoneAdjusted_69989.csv")
 
@@ -150,7 +150,12 @@ Bootstrapped Variance Ratio: 0.9519
 
 
 """
-For Question 4, we use t test to determine whether each tag is gendered.
+For Question 4, we use Mann-Whitney U test to determine whether each tag is gendered.
+
+In this question, the normalized number of tags sometimes appear to be 1.0 (100%) for those who received few ratings (1 or 2 ratings).
+Given that the normalized tag columns only have values between 0 and 1, those extreme values are not representative.
+Therefore, to reduce these extreme values caused few number of ratings, we choose to only consider those who received 3 or more ratings.
+After this filtering, we still have around 40,000 rows, which is still large.
 """
 # First extrace columns that are tages
 normalized_tag_columns = [
@@ -169,13 +174,16 @@ tag_results = []
 
 for tag in normalized_tag_columns:
     # Split normalized tag values by gender
-    tag_male = all_data.query("`Male gender` == 1 & `Female` == 0")[tag]
-    tag_female = all_data.query("`Male gender` == 0 & `Female` == 1")[tag]
+    # Select those who received 3 or more ratings
+    tag_male = all_data.query("`Male gender` == 1 & `Female` == 0 & `Number of ratings` >= 3")
+    tag_female = all_data.query("`Male gender` == 0 & `Female` == 1 & `Number of ratings` >= 3")
+
+    # Sometimes there are unrealistic data, such as "received 17 ratings but received 100 tags"
+    # Thus, drop those abnormal data. Then we can begin our test
+    tag_male = tag_male.loc[tag_male[tag] <= 1.01, tag]
+    tag_female = tag_female.loc[tag_female[tag] <= 1.01, tag]
     
-    # Perform Levene first, and then t-test
-    levene_test = levene(tag_male, tag_female)
-    if_eq_var = False if levene_test.pvalue > ALPHA else True
-    each_result = ttest_ind(tag_male, tag_female, equal_var=if_eq_var)
+    each_result = mannwhitneyu(tag_male, tag_female)
     
     tag_results.append({'Tag': tag, 'P-Value': each_result.pvalue})
 
@@ -189,19 +197,24 @@ gendered_tags = [each_tag.replace(" (Normalized)", "") for each_tag in gendered_
 print(f"The following {len(gendered_tags)} tags exhibit a statistically significant different in gender: {gendered_tags}")
 
 most_sig_3, least_sig_3 = results_df["Tag"].to_list()[:3], results_df["Tag"].to_list()[-3:]
+most_sig_3_pv, least_sig_3_pv = results_df["P-Value"].to_list()[:3], results_df["P-Value"].to_list()[-3:]
 most_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in most_sig_3]
 least_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in least_sig_3]
-print(f"The most gendered 3 tags are {most_sig_3}, and the least gendered 3 tags are {least_sig_3}")
+print(f"The most gendered 3 tags are {most_sig_3} with pvalues {most_sig_3_pv},\n\
+The least gendered 3 tags are {least_sig_3} with pvalues {least_sig_3_pv}.")
 """
 The result for Question 4 is:
 
 The following 19 tags exhibit a statistically significant different in gender: 
-['Hilarious', 'Amazing lectures', 'Caring', 'Respected', 'Lecture heavy', 'Participation matters', 
-'Good feedback', 'Graded by few things', 'Lots of homework', 'Group projects', 'So many papers', 
-'Extra credit', 'Tough grader', 'Test heavy', 'Clear grading', 'Accessible', 'Inspirational', 
-'Lots to read', 'Don’t skip class or you will not pass']
+['Hilarious', 'Amazing lectures', 'Lecture heavy', 'Caring', 'Respected', 'Participation matters', 
+'Good feedback', 'Graded by few things', 'Group projects', 'Lots of homework', 'So many papers', 
+'Extra credit', 'Test heavy', 'Lots to read', 'Inspirational', 'Accessible', 'Clear grading', 
+'Tough grader', 'Don’t skip class or you will not pass']
 
-The most gendered 3 tags are ['Hilarious', 'Amazing lectures', 'Caring'],
-and the least gendered 3 tags are ['Lots to read', 'Don’t skip class or you will not pass', 'Pop quizzes!']
+The most gendered 3 tags are ['Hilarious', 'Amazing lectures', 'Lecture heavy'] 
+with pvalues [3.314614e-228, 4.721212e-54, 3.713883e-39];
+
+The least gendered 3 tags are ['Tough grader', 'Don’t skip class or you will not pass', 'Pop quizzes!'] 
+with pvalues [2.432612e-05, 1.296946e-04, 2.694607e-02].
 """
 
