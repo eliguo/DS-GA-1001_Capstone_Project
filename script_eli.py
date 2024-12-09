@@ -64,26 +64,36 @@ else:
 
 # Question 6
 
-# calculate means
+# calculate means and pooled standard deviation
 mean_male = diff_male.mean()
 mean_female = diff_female.mean()
 
-# calculate t-distribution confidence interval
-se_diff = ((var_male / n_male) + (var_female / n_female)) ** 0.5
+var_male = diff_male.var(ddof=1)
+var_female = diff_female.var(ddof=1)
+n_male = len(diff_male)
+n_female = len(diff_female)
+
+pooled_sd = np.sqrt(((n_male - 1) * var_male + (n_female - 1) * var_female) / (n_male + n_female - 2))
+cohen_d = (mean_male - mean_female) / pooled_sd
+
+# calculate standard error for Cohen's d
+se_cohen_d = np.sqrt((1 / n_male) + (1 / n_female))
+
 dof_welch = ((var_male / n_male + var_female / n_female) ** 2) / \
             (((var_male / n_male) ** 2) / (n_male - 1) + ((var_female / n_female) ** 2) / (n_female - 1))
 
-mean_diff = mean_male - mean_female
+# t critical value
 t_critical = t.ppf(1 - 0.05 / 2, dof_welch)
 
-ci_lower_t = mean_diff - t_critical * se_diff
-ci_upper_t = mean_diff + t_critical * se_diff
+# confidence interval for Cohen's d
+ci_lower_d = cohen_d - t_critical * se_cohen_d
+ci_upper_d = cohen_d + t_critical * se_cohen_d
 
-print(f"Mean Difficulty Difference (Male - Female): {mean_diff:.4f}")
-print(f"95% CI for Mean Difficulty Difference (t-distribution): ({ci_lower_t:.4f}, {ci_upper_t:.4f})")
+print(f"Cohen's d: {cohen_d:.4f}")
+print(f"95% CI for Cohen's d (t-distribution): ({ci_lower_d:.4f}, {ci_upper_d:.4f})")
 
-# bootstrap confidence interval
-boot_mean_diff = []
+# bootstrap confidence interval for Cohen's d
+boot_cohen_d = []
 for _ in range(5000):
     boot_male_ind = rng.integers(low=0, high=n_male, size=n_male)
     boot_female_ind = rng.integers(low=0, high=n_female, size=n_female)
@@ -91,34 +101,36 @@ for _ in range(5000):
     boot_male_samp = diff_male.iloc[boot_male_ind].values
     boot_female_samp = diff_female.iloc[boot_female_ind].values
 
-    each_mean_diff = boot_male_samp.mean() - boot_female_samp.mean()
-    boot_mean_diff.append(each_mean_diff)
+    boot_mean_diff = boot_male_samp.mean() - boot_female_samp.mean()
+    boot_pooled_sd = np.sqrt(((len(boot_male_samp) - 1) * boot_male_samp.var(ddof=1) + \
+                              (len(boot_female_samp) - 1) * boot_female_samp.var(ddof=1)) / \
+                             (len(boot_male_samp) + len(boot_female_samp) - 2))
 
-ci_mean_diff_bootstrap = np.percentile(boot_mean_diff, [2.5, 97.5])
+    boot_cohen_d.append(boot_mean_diff / boot_pooled_sd)
 
-print(f"Bootstrapped Mean Difficulty Difference (Male - Female): {np.mean(boot_mean_diff):.4f}")
-print(f"95% CI for Mean Difficulty Difference (Bootstrap): ({ci_mean_diff_bootstrap[0]:.4f}, {ci_mean_diff_bootstrap[1]:.4f})")
+ci_cohen_d_bootstrap = np.percentile(boot_cohen_d, [2.5, 97.5])
+
+print(f"Bootstrapped Cohen's d: {np.mean(boot_cohen_d):.4f}")
+print(f"95% CI for Cohen's d (Bootstrap): ({ci_cohen_d_bootstrap[0]:.4f}, {ci_cohen_d_bootstrap[1]:.4f})")
 
 # combined visualization for t-distribution and bootstrap
 plt.figure(figsize=(10, 6))
 
 # bootstrap visualization
-sns.histplot(boot_mean_diff, kde=True, bins=30, color='blue', alpha=0.5, label='Bootstrap Distribution')
-plt.axvline(ci_mean_diff_bootstrap[0], color='purple', linestyle='--', label=f'Bootstrap Lower CI: {ci_mean_diff_bootstrap[0]:.4f}')
-plt.axvline(ci_mean_diff_bootstrap[1], color='orange', linestyle='--', label=f'Bootstrap Upper CI: {ci_mean_diff_bootstrap[1]:.4f}')
-plt.axvline(np.mean(boot_mean_diff), color='black', linestyle='-', label=f'Bootstrap Mean: {np.mean(boot_mean_diff):.4f}')
+sns.histplot(boot_cohen_d, kde=True, bins=30, color='blue', alpha=0.5, label='Bootstrap Distribution')
+plt.axvline(ci_cohen_d_bootstrap[0], color='purple', linestyle='--', label=f'Bootstrap Lower CI: {ci_cohen_d_bootstrap[0]:.4f}')
+plt.axvline(ci_cohen_d_bootstrap[1], color='orange', linestyle='--', label=f'Bootstrap Upper CI: {ci_cohen_d_bootstrap[1]:.4f}')
+plt.axvline(np.mean(boot_cohen_d), color='black', linestyle='-', label=f'Bootstrap Mean: {np.mean(boot_cohen_d):.4f}')
 
 # t-distribution visualization
-plt.axvline(ci_lower_t, color='red', linestyle='--', label=f'T-dist Lower CI: {ci_lower_t:.4f}')
-plt.axvline(ci_upper_t, color='green', linestyle='--', label=f'T-dist Upper CI: {ci_upper_t:.4f}')
-plt.axvline(mean_diff, color='black', linestyle='-', label=f'T-dist Mean: {mean_diff:.4f}')
+plt.axvline(ci_lower_d, color='red', linestyle='--', label=f'T-dist Lower CI: {ci_lower_d:.4f}')
+plt.axvline(ci_upper_d, color='green', linestyle='--', label=f'T-dist Upper CI: {ci_upper_d:.4f}')
+plt.axvline(cohen_d, color='black', linestyle='-', label=f'T-dist Mean: {cohen_d:.4f}')
 
-plt.xlim(-0.01, 0.01)  # adjust x-axis limits for clarity
-plt.title('Confidence Intervals: T-Distribution vs Bootstrap')
-plt.xlabel('Mean Difference (Male - Female)')
-plt.ylabel('Density / Value')
+plt.title("Confidence Intervals for Cohen's d: T-Distribution vs Bootstrap")
+plt.xlabel("Cohen's d")
+plt.ylabel("Density / Value")
 plt.legend()
-plt.savefig(os.path.join('fig', 'combined_ci_visualization.png'))
 plt.show()
 
 # Extra Credit
