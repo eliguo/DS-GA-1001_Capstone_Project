@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t, ttest_ind, levene, mannwhitneyu
 
-all_data = pd.read_csv("rmpCapstoneAdjusted_69989.csv")
+all_data = pd.read_csv("rmpCapstoneAdjusted_69706.csv")
 
 """
 For Question 1, we firstly apply Levene's test to check whether the two datasets have equal variances, 
@@ -53,19 +53,20 @@ else:
 whether_significant = 'significant!' if pval < ALPHA else 'not significant!'
 print(f"The p-value for the one-sided t-test is {pval:.4e}, which means that the result is {whether_significant}")
 
+
 # A plot that visualizes their distributions
-bins = np.arange(0.75, 5.25, 0.5)
-plt.hist(rating_male, bins=bins, label='male', alpha=0.5, color="blue")
-plt.hist(rating_female, bins=bins, label='female', alpha=0.5, color="red")
-plt.xlabel('Rating from 1 to 5')
+bins = np.arange(0.75, 5.25, 0.1)
+plt.hist(rating_male, bins=bins, label='male', alpha=0.5, color="blue", edgecolor='black')
+plt.hist(rating_female, bins=bins, label='female', alpha=0.5, color="red", edgecolor='black')
+plt.xlabel('Average Ratings')
 plt.ylabel('Frequency')
-plt.title('Comparison between the ratings of male / female professore')
+plt.title('Comparison between the ratings of male / female professors')
 plt.legend()
 plt.show()
 """
 The result for Question 1 is:
 Levene's test indicates a statistically significant difference in the variance between the ratings for male and female
-Thus, we decided to use Welch's t-test. The p-value is 2.6165e-13 < 0.005.
+Thus, we decided to use Welch's t-test. The p-value is 8.8601e-13 < 0.005.
 Hence, we reject the null hypothesis
 """
 
@@ -89,6 +90,14 @@ if levene_test.pvalue > ALPHA:
     print("There is not a gender difference in the spread \n")
 else:
     print("There is a gender difference in the spread \n")
+
+# Visualization: 
+plt.boxplot([rating_male, rating_female], 
+            labels=["male professors", "female professors"])
+plt.title("comparison between the average ratings for male and female professors")
+plt.ylabel("Average ratings")
+plt.legend()
+plt.show()
 """
 The result for Question 2 is:
 Levene's test gives a p-value to be 1.1839e-06 < 0.005.
@@ -137,6 +146,35 @@ print(f"Bootstrapped Cohen's d: {np.mean(boot_cohen_d):.4f}")
 print(f"95% CI for Cohen's d: {ci_cohen_d}")
 print(f"Bootstrapped Variance Ratio: {np.mean(ci_var_ratio):.4f}")
 print(f"95% CI for Variance Ratio: {ci_var_ratio}")
+
+
+# Visualizations:
+# Since the plots are histograms, it is better to show them separately rather than in one row
+plt.figure(figsize=(10, 6))
+plt.hist(boot_cohen_d, bins=50, color='yellow', edgecolor='black')
+
+# plot the confidence interval
+plt.axvline(np.mean(boot_cohen_d), color='red', linestyle='--', label=f"Mean Cohen's d")
+plt.axvline(ci_cohen_d[0], color='green', linestyle='--', label=f"left bound for 95% CI")
+plt.axvline(ci_cohen_d[1], color='green', linestyle='--', label=f"right bound for 95% CI")
+plt.title("Bootstrapped Cohen's d with 95% CI")
+plt.xlabel("Cohen's d")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.hist(boot_var_ratio, bins=50, color='orange', edgecolor='black')
+
+# plot the confidence interval
+plt.axvline(np.mean(boot_var_ratio), color='blue', linestyle='--', label=f"Mean Variance Ratio")
+plt.axvline(ci_var_ratio[0], color='gray', linestyle='--', label=f"left bound for 95% CI")
+plt.axvline(ci_var_ratio[1], color='gray', linestyle='--', label=f"right bound for 95% CI")
+plt.title("Bootstrapped Variance Ratio with 95% CI")
+plt.xlabel("Variance Ratio")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()
 """
 The result for Question 3 is:
 
@@ -157,7 +195,7 @@ Given that the normalized tag columns only have values between 0 and 1, those ex
 Therefore, to reduce these extreme values caused few number of ratings, we choose to only consider those who received 3 or more ratings.
 After this filtering, we still have around 40,000 rows, which is still large.
 """
-# First extrace columns that are tages
+# First extract columns that are tages
 normalized_tag_columns = [
     'Tough grader (Normalized)', 'Good feedback (Normalized)', 'Respected (Normalized)',
     'Lots to read (Normalized)', 'Participation matters (Normalized)', 
@@ -187,6 +225,8 @@ for tag in normalized_tag_columns:
     
     tag_results.append({'Tag': tag, 'P-Value': each_result.pvalue})
 
+
+
 # Convert results to DataFrame, such that tags are paired with p-values, then sort
 results_df = pd.DataFrame(tag_results)
 results_df = results_df.sort_values('P-Value')
@@ -198,10 +238,54 @@ print(f"The following {len(gendered_tags)} tags exhibit a statistically signific
 
 most_sig_3, least_sig_3 = results_df["Tag"].to_list()[:3], results_df["Tag"].to_list()[-3:]
 most_sig_3_pv, least_sig_3_pv = results_df["P-Value"].to_list()[:3], results_df["P-Value"].to_list()[-3:]
-most_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in most_sig_3]
-least_sig_3 = [each_tag.replace(" (Normalized)", "") for each_tag in least_sig_3]
-print(f"The most gendered 3 tags are {most_sig_3} with pvalues {most_sig_3_pv},\n\
-The least gendered 3 tags are {least_sig_3} with pvalues {least_sig_3_pv}.")
+most_sig_3_original_word = [each_tag.replace(' (Normalized)', '') for each_tag in most_sig_3]
+least_sig_3_original_word = [each_tag.replace(' (Normalized)', '') for each_tag in least_sig_3]
+print(f"The most gendered 3 tags are {most_sig_3_original_word} with pvalues {most_sig_3_pv},\n\
+The least gendered 3 tags are {least_sig_3_original_word} with pvalues {least_sig_3_pv}.")
+
+# Visualization:
+# For plotting, plotting all 20 tags are too many, so I just plot the 3 most and 3 least significant tags.
+bins = np.arange(-0.05, 1.15, 0.1)
+place = 1
+plt.figure(figsize=(20, 4))
+for most_tag in most_sig_3:
+    # Still need to extract data again
+    tag_male = all_data.query("`Male gender` == 1 & `Female` == 0 & `Number of ratings` >= 3")
+    tag_female = all_data.query("`Male gender` == 0 & `Female` == 1 & `Number of ratings` >= 3")
+    tag_male = tag_male.loc[tag_male[most_tag] <= 1.01, most_tag]
+    tag_female = tag_female.loc[tag_female[most_tag] <= 1.01, most_tag]
+
+    # determine subplot place
+    plt.subplot(1, 3, place)
+    plt.hist(tag_male, bins=bins, alpha=0.5, color="blue", edgecolor="black", label="Male")
+    plt.hist(tag_female, bins=bins, alpha=0.5, color="red", edgecolor="black", label="Female")
+    plt.title(f"Comparison on the tag \"{most_tag.replace(' (Normalized)', '')}\"")
+    plt.ylabel("frequency")
+    plt.xlabel("normalized value")
+    plt.legend()
+    place += 1
+plt.show()
+
+# For least significant 3:
+place = 1
+plt.figure(figsize=(20, 4))
+for least_tag in least_sig_3:
+    # Still need to extract data again
+    tag_male = all_data.query("`Male gender` == 1 & `Female` == 0 & `Number of ratings` >= 3")
+    tag_female = all_data.query("`Male gender` == 0 & `Female` == 1 & `Number of ratings` >= 3")
+    tag_male = tag_male.loc[tag_male[least_tag] <= 1.01, least_tag]
+    tag_female = tag_female.loc[tag_female[least_tag] <= 1.01, least_tag]
+
+    # determine subplot place
+    plt.subplot(1, 3, place)
+    plt.hist(tag_male, bins=bins, alpha=0.5, color="blue", edgecolor="black", label="Male")
+    plt.hist(tag_female, bins=bins, alpha=0.5, color="red", edgecolor="black", label="Female")
+    plt.title(f"Comparison on the tag \"{least_tag.replace(' (Normalized)', '')}\"")
+    plt.ylabel("frequency")
+    plt.xlabel("normalized value")
+    plt.legend()
+    place += 1
+plt.show()
 """
 The result for Question 4 is:
 
