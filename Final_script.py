@@ -537,9 +537,9 @@ print(f"Variance in Average Difficulty (Adjusted) of female professors: {var_fem
 levene_test = levene(diff_male, diff_female)
 print(f"Levene's Test:\n  Statistic = {levene_test.statistic:.4f}\n  P-Value = {levene_test.pvalue:.4e}")
 if levene_test.pvalue > ALPHA:
-    print("  Result: Assume equal variances (p > 0.005).\n")
+    print("  Result: Assume equal variances (p > 0.005).")
 else:
-    print("  Result: Variances are significantly different (p <= 0.005).\n")
+    print("  Result: Variances are significantly different (p <= 0.005).")
 
 # perform Welch's t-test
 welch_t_test = ttest_ind(diff_male, diff_female, equal_var=False)
@@ -575,62 +575,41 @@ n_female = len(diff_female)
 pooled_sd = np.sqrt(((n_male - 1) * var_male + (n_female - 1) * var_female) / (n_male + n_female - 2))
 cohen_d = (mean_male - mean_female) / pooled_sd
 
-# calculate standard error for Cohen's d
-se_cohen_d = np.sqrt((1 / n_male) + (1 / n_female))
-
-dof_welch = ((var_male / n_male + var_female / n_female) ** 2) / \
-            (((var_male / n_male) ** 2) / (n_male - 1) + ((var_female / n_female) ** 2) / (n_female - 1))
-
-# t critical value
-t_critical = t.ppf(1 - 0.05 / 2, dof_welch)
-
-# confidence interval for Cohen's d
-ci_lower_d = cohen_d - t_critical * se_cohen_d
-ci_upper_d = cohen_d + t_critical * se_cohen_d
-
 print(f"Cohen's d: {cohen_d:.4f}")
-print(f"95% CI for Cohen's d (t-distribution): ({ci_lower_d:.4f}, {ci_upper_d:.4f})")
 
-# bootstrap confidence interval for Cohen's d
+# bootstrap confidence interval for cohen's d
 boot_cohen_d = []
 for _ in range(5000):
+    # resample indices with replacement
     boot_male_ind = rng.integers(low=0, high=n_male, size=n_male)
     boot_female_ind = rng.integers(low=0, high=n_female, size=n_female)
 
+    # get bootstrap samples
     boot_male_samp = diff_male.iloc[boot_male_ind].values
     boot_female_samp = diff_female.iloc[boot_female_ind].values
 
+    # calculate cohen's d for bootstrap sample
     boot_mean_diff = boot_male_samp.mean() - boot_female_samp.mean()
     boot_pooled_sd = np.sqrt(((len(boot_male_samp) - 1) * boot_male_samp.var(ddof=1) + \
                               (len(boot_female_samp) - 1) * boot_female_samp.var(ddof=1)) / \
                              (len(boot_male_samp) + len(boot_female_samp) - 2))
-
     boot_cohen_d.append(boot_mean_diff / boot_pooled_sd)
 
 ci_cohen_d_bootstrap = np.percentile(boot_cohen_d, [2.5, 97.5])
+print(f"Bootstrapped Cohen's d (mean): {np.mean(boot_cohen_d):.4f}")
+print(f"95% CI for Cohen's d (bootstrap): ({ci_cohen_d_bootstrap[0]:.4f}, {ci_cohen_d_bootstrap[1]:.4f})")
 
-print(f"Bootstrapped Cohen's d: {np.mean(boot_cohen_d):.4f}")
-print(f"95% CI for Cohen's d (Bootstrap): ({ci_cohen_d_bootstrap[0]:.4f}, {ci_cohen_d_bootstrap[1]:.4f})")
-
-# combined visualization for t-distribution and bootstrap
+# visualize the bootstrap distribution of cohen's d
 plt.figure(figsize=(10, 6))
-
-# bootstrap visualization
-sns.histplot(boot_cohen_d, kde=True, bins=30, color='blue', alpha=0.5, label='Bootstrap Distribution')
-plt.axvline(ci_cohen_d_bootstrap[0], color='purple', linestyle='--', label=f'Bootstrap Lower CI: {ci_cohen_d_bootstrap[0]:.4f}')
-plt.axvline(ci_cohen_d_bootstrap[1], color='orange', linestyle='--', label=f'Bootstrap Upper CI: {ci_cohen_d_bootstrap[1]:.4f}')
-plt.axvline(np.mean(boot_cohen_d), color='black', linestyle='-', label=f'Bootstrap Mean: {np.mean(boot_cohen_d):.4f}')
-
-# t-distribution visualization
-plt.axvline(ci_lower_d, color='red', linestyle='--', label=f'T-dist Lower CI: {ci_lower_d:.4f}')
-plt.axvline(ci_upper_d, color='green', linestyle='--', label=f'T-dist Upper CI: {ci_upper_d:.4f}')
-plt.axvline(cohen_d, color='black', linestyle='-', label=f'T-dist Mean: {cohen_d:.4f}')
-
-plt.title("Confidence Intervals for Cohen's d: T-Distribution vs Bootstrap")
+plt.hist(boot_cohen_d, bins=30, alpha=0.5, density=True)
+plt.axvline(ci_cohen_d_bootstrap[0], linestyle='--', label=f'Bootstrap Lower CI: {ci_cohen_d_bootstrap[0]:.4f}')
+plt.axvline(ci_cohen_d_bootstrap[1], linestyle='--', label=f'Bootstrap Upper CI: {ci_cohen_d_bootstrap[1]:.4f}')
+plt.axvline(np.mean(boot_cohen_d), linestyle='-', label=f'Bootstrap Mean: {np.mean(boot_cohen_d):.4f}')
+plt.title("Bootstrap Distribution of Cohen's d")
 plt.xlabel("Cohen's d")
-plt.ylabel("Density / Value")
+plt.ylabel("Density")
 plt.legend()
-plt.savefig(os.path.join('fig', "cohens_d_confidence_intervals.png"))
+plt.savefig(os.path.join('fig', "cohens_d_confidence_intervals_bootstrap.png"))
 plt.show()
 """
 ###########################################################################
@@ -1483,9 +1462,9 @@ anova_result = f_oneway(*data_by_region)
 # print ANOVA result
 print(f"ANOVA Result: F-statistic = {anova_result.statistic:.4f}, p-value = {anova_result.pvalue:.4e}")
 if anova_result.pvalue <= ALPHA:
-    print(f"result: the average rating is significantly different across regions (p <= {ALPHA}).")
+    print(f"Result: The average rating is significantly different across regions (p <= {ALPHA}).")
 else:
-    print(f"result: the average rating is not significantly different across regions (p > {ALPHA}).")
+    print(f"Result: The average rating is not significantly different across regions (p > {ALPHA}).")
 
 # visualize with boxplot
 plt.figure(figsize=(10, 6))
