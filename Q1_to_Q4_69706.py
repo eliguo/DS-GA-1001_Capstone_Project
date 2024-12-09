@@ -296,9 +296,9 @@ The following 19 tags exhibit a statistically significant different in gender:
 'Tough grader', 'Don’t skip class or you will not pass']
 
 The most gendered 3 tags are ['Hilarious', 'Amazing lectures', 'Lecture heavy'] 
-with pvalues [3.314614e-228, 4.721212e-54, 3.713883e-39];
+with pvalues [1.225e-227, 1.482e-53, 3.384e-39];
 
 The least gendered 3 tags are ['Tough grader', 'Don’t skip class or you will not pass', 'Pop quizzes!'] 
-with pvalues [2.432612e-05, 1.296946e-04, 2.694607e-02].
+with pvalues [3.091e-05, 1.515e-4, 2.921e-2].
 """
 
