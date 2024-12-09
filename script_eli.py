@@ -131,6 +131,7 @@ plt.title("Confidence Intervals for Cohen's d: T-Distribution vs Bootstrap")
 plt.xlabel("Cohen's d")
 plt.ylabel("Density / Value")
 plt.legend()
+plt.savefig(os.path.join('fig', "cohens_d_confidence_intervals.png"))
 plt.show()
 
 # Extra Credit
