@@ -29,7 +29,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 # In[2]:
 
 
-# Here we return preprocessinf code with an additional line: Dropped rows with missing values in "The proportion of students that said they would take the class again".
+# Re-running preprocessing with an additional step: Dropped rows with missing values in "The proportion of students that said they would take the class again," which appears to be an important feature
 # This reduces the dataset size. However, after testing various fillna methods, we observed noticeably worse results compared to dropping rows.
 # Therefore, for the regression task, we prioritize data quality over quantity, as the remaining dataset is still sufficiently large for analysis.
 
